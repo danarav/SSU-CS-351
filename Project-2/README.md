@@ -14,7 +14,7 @@ To evaluate the performance gains from multi-threading, we calculate the speedup
 
 ## Computing a Mean
 
-![Speedup Graph (Mean)](/mean.png)
+![Speedup Graph (Mean)](mean.png)
 
 ### Shape of the curve
 
