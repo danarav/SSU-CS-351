@@ -1,4 +1,3 @@
-
 #include <barrier>
 #include <iostream>
 #include <numeric>
@@ -94,8 +93,18 @@ int main(int argc, char* argv[]) {
     //
     for (size_t id = 0; id < threads.size(); ++id) {
         threads[id] = std::jthread(
-            []() {
+            [&, id]() {
                 // Add your implementation here
+		const size_t begin = id * chunkSize;
+		const size_t end = std::min(begin + chunkSize, data.size());
+
+		double localSum = 0.0;
+
+		for (size_t i = begin; i < end; ++i){
+		    localSum += data[i];
+		}
+
+		sums[id] = localSum;
 
                 barrier.arrive_and_wait();
             }

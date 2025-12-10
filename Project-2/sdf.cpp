@@ -1,4 +1,6 @@
 
+
+
 #include <barrier>
 #include <cmath>
 #include <format>
@@ -136,8 +138,10 @@ int main(int argc, char* argv[]) {
     //      closing brace :-)   
     //
     for (size_t id = 0; id < threads.size(); ++id) {
-        threads[id] = std::jthread{ []() {
+        threads[id] = std::jthread{ [&, id]() {
 
+		size_t localCount = 0;
+		
             // C++ 11's random number generation system.  These functions
             //   will generate uniformly distributed unsigned integers in
             //   the range [0, partitions].  The functions are used in the
@@ -149,14 +153,18 @@ int main(int argc, char* argv[]) {
 
                 // Define a helper function to generate random floating-point
                 //   values in the range [0.0, 1.0]
-                auto rand = [&,partitions]() {
+                auto rand = [&]() {
                     return static_cast<double>(uniform(generator)) / partitions;
                 };
             
                 // Generate points inside the volume cube.  First, create uniformly
                 //   distributed points in the range [0.0, 1.0] for each dimension.
-                vec3 p(rand(), rand(), rand());
+                for (size_t i = 0; i < chunkSize; ++i){
+		    vec3 p(rand(), rand(), rand());
+	            localCount += sdf(p);
+	        }
 
+            insidePoints[id] = localCount;
 
             barrier.arrive_and_wait();
         }};
@@ -167,7 +175,14 @@ int main(int argc, char* argv[]) {
     //   having the main thread wait on a thread to keep it from exiting
     //
     // (Look in threaded.cpp for hints)
+    
+    for (auto& thread : threads){
+	    if (thread.joinable()){
+		    thread.join();
+	    }
+    }
 
+    size_t volumePoints = std::accumulate(insidePoints.begin(), insidePoints.end(), size_t(0));
     std::cout << static_cast<double>(volumePoints) / numSamples << "\n";
-}
 
+}
